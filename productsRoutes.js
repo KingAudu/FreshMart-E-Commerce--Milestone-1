@@ -115,6 +115,40 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Get product recommendations
+router.get('/:id/recommendations', async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      });
+    }
+
+    // Find products in same category
+    const recommendations = await Product.find({
+      category: product.category,
+      _id: { $ne: product._id },
+      isActive: true
+    })
+    .limit(4)
+    .select('name price images slug')
+    .populate('category', 'name slug');
+
+    res.status(200).json({
+      success: true,
+      data: { recommendations }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
+    });
+  }
+});
+
 // Get products by category slug
 router.get('/category/:slug', async (req, res) => {
   try {
